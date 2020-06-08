@@ -5,6 +5,7 @@
  */
 import "./components/chat_content.js";
 import "./components/help_messages.js";
+import "./components/toolbar.js";
 import "converse-chatboxviews";
 import "converse-modal";
 import log from "@converse/headless/log";
@@ -13,9 +14,7 @@ import tpl_chatbox_head from "templates/chatbox_head.js";
 import tpl_chatbox_message_form from "templates/chatbox_message_form.html";
 import tpl_new_day from "templates/new_day.html";
 import tpl_spinner from "templates/spinner.html";
-import tpl_spoiler_button from "templates/spoiler_button.html";
 import tpl_toolbar from "templates/toolbar.js";
-import tpl_toolbar_fileupload from "templates/toolbar_fileupload.html";
 import tpl_user_details_modal from "templates/user_details_modal.js";
 import { BootstrapModal } from "./converse-modal.js";
 import { View } from 'skeletor.js/src/view.js';
@@ -171,14 +170,10 @@ converse.plugins.add('converse-chatview', {
             is_chatroom: false,  // Leaky abstraction from MUC
 
             events: {
-                'change input.fileupload': 'onFileSelection',
                 'click .chatbox-navback': 'showControlBox',
                 'click .new-msgs-indicator': 'viewUnreadMessages',
                 'click .send-button': 'onFormSubmitted',
-                'click .toggle-call': 'toggleCall',
                 'click .toggle-clear': 'clearMessages',
-                'click .toggle-compose-spoiler': 'toggleComposeSpoilerMessage',
-                'click .upload-file': 'toggleFileUpload',
                 'input .chat-textarea': 'inputChanged',
                 'keydown .chat-textarea': 'onKeyDown',
                 'keyup .chat-textarea': 'onKeyUp',
@@ -340,8 +335,6 @@ converse.plugins.add('converse-chatview', {
                     this.getToolbarOptions()
                 );
                 render(tpl_toolbar(options), this.el.querySelector('.chat-toolbar'));
-                this.addSpoilerButton(options);
-                this.addFileUploadButton();
                 /**
                  * Triggered once the _converse.ChatBoxView's toolbar has been rendered
                  * @event _converse#renderToolbar
@@ -386,14 +379,6 @@ converse.plugins.add('converse-chatview', {
                 this.user_details_modal.show(ev);
             },
 
-            toggleFileUpload () {
-                this.el.querySelector('input.fileupload').click();
-            },
-
-            onFileSelection (evt) {
-                this.model.sendFiles(evt.target.files);
-            },
-
             onDragOver (evt) {
                 evt.preventDefault();
             },
@@ -406,43 +391,6 @@ converse.plugins.add('converse-chatview', {
                 }
                 evt.preventDefault();
                 this.model.sendFiles(evt.dataTransfer.files);
-            },
-
-            async addFileUploadButton () {
-                if (await api.disco.supports(Strophe.NS.HTTPUPLOAD, _converse.domain)) {
-                    if (this.el.querySelector('.chat-toolbar .upload-file')) {
-                        return;
-                    }
-                    this.el.querySelector('.chat-toolbar').insertAdjacentHTML(
-                        'beforeend',
-                        tpl_toolbar_fileupload({'tooltip_upload_file': __('Choose a file to send')}));
-                }
-            },
-
-            /**
-             * Asynchronously adds a button for writing spoiler
-             * messages, based on whether the contact's clients support it.
-             * @private
-             * @method _converse.ChatBoxView#addSpoilerButton
-             */
-            async addSpoilerButton (options) {
-                if (!options.show_spoiler_button || this.model.get('type') === _converse.CHATROOMS_TYPE) {
-                    return;
-                }
-                const contact_jid = this.model.get('jid');
-                if (this.model.presence.resources.length === 0) {
-                    return;
-                }
-                const results = await Promise.all(
-                    this.model.presence.resources.map(
-                        r => api.disco.supports(Strophe.NS.SPOILER, `${contact_jid}/${r.get('name')}`)
-                    )
-                );
-                const all_resources_support_spolers = results.reduce((acc, val) => (acc && val), true);
-                if (all_resources_support_spolers) {
-                    const html = tpl_spoiler_button(this.model.toJSON());
-                    this.el.querySelector('.chat-toolbar').insertAdjacentHTML('afterBegin', html);
-                }
             },
 
             async renderHeading () {
@@ -1002,22 +950,6 @@ converse.plugins.add('converse-chatview', {
                 }
                 this.updateCharCounter(textarea.value);
                 u.placeCaretAtEnd(textarea);
-            },
-
-            toggleCall (ev) {
-                ev.stopPropagation();
-                /**
-                 * When a call button (i.e. with class .toggle-call) on a chatbox has been clicked.
-                 * @event _converse#callButtonClicked
-                 * @type { object }
-                 * @property { Strophe.Connection } _converse.connection - The XMPP Connection object
-                 * @property { _converse.ChatBox | _converse.ChatRoom } _converse.connection - The XMPP Connection object
-                 * @example _converse.api.listen.on('callButtonClicked', (connection, model) => { ... });
-                 */
-                api.trigger('callButtonClicked', {
-                    connection: _converse.connection,
-                    model: this.model
-                });
             },
 
             toggleComposeSpoilerMessage () {

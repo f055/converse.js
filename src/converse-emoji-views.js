@@ -416,10 +416,10 @@ converse.plugins.add('converse-emoji-views', {
 
         api.listen.on('chatBoxClosed', view => view.emoji_picker_view && view.emoji_picker_view.remove());
 
-        api.listen.on('renderToolbar', view => {
+        api.listen.on('getToolbarButtons', el => {
             if (api.settings.get('visible_toolbar_buttons').emoji) {
                 const html = tpl_emoji_button({'tooltip_insert_smiley': __('Insert emojis')});
-                view.el.querySelector('.chat-toolbar').insertAdjacentHTML('afterBegin', html);
+                el.querySelector('.chat-toolbar').insertAdjacentHTML('afterBegin', html);
             }
         });
 

@@ -435,16 +435,12 @@ converse.plugins.add('converse-muc-views', {
             className: 'chatbox chatroom hidden',
             is_chatroom: true,
             events: {
-                'change input.fileupload': 'onFileSelection',
                 'click .chatbox-navback': 'showControlBox',
                 'click .hide-occupants': 'hideOccupants',
                 'click .new-msgs-indicator': 'viewUnreadMessages',
                 // Arrow functions don't work here because you can't bind a different `this` param to them.
                 'click .occupant-nick': function (ev) {this.insertIntoTextArea(ev.target.textContent) },
                 'click .send-button': 'onFormSubmitted',
-                'click .toggle-call': 'toggleCall',
-                'click .toggle-occupants': 'toggleOccupants',
-                'click .upload-file': 'toggleFileUpload',
                 'dragover .chat-textarea': 'onDragOver',
                 'drop .chat-textarea': 'onDrop',
                 'input .chat-textarea': 'inputChanged',
@@ -1125,20 +1121,6 @@ converse.plugins.add('converse-muc-views', {
                     ev.stopPropagation();
                 }
                 this.model.save({'hidden_occupants': true});
-                this.scrollDown();
-            },
-
-            /**
-             * Show or hide the right sidebar containing the chat occupants.
-             * @private
-             * @method _converse.ChatRoomView#toggleOccupants
-             */
-            toggleOccupants (ev) {
-                if (ev) {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                }
-                this.model.save({'hidden_occupants': !this.model.get('hidden_occupants')});
                 this.scrollDown();
             },
 
